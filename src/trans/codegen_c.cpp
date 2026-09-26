@@ -6162,8 +6162,30 @@ namespace {
                     break;
                 }
                 };
+            auto emit_atomic_arith_cast = [&]() {
+                const auto& ty = params.m_types.at(0);
+                m_of << "(";
+                if(ty.data().is_Pointer()) {
+                    m_of << "uintptr_t ";
+                }
+                else {
+                    emit_ctype(ty);
+                }
+                m_of << "_Atomic *)";
+                };
+            auto emit_atomic_arith_arg_cast = [&]() {
+                if(params.m_types.at(0).data().is_Pointer()) {
+                    m_of << "(uintptr_t) ";
+                }
+            };
             auto emit_atomic_arith = [&](AtomicOp op, Ordering ordering) {
                 emit_lvalue(e.ret_val); m_of << " = ";
+                const auto& ty = params.m_types.at(0);
+                if(ty.data().is_Pointer()) {
+                    m_of << "(";
+                    emit_ctype(ty);
+                    m_of << ")";
+                }
                 switch(m_compiler)
                 {
                 case Compiler::Gcc:
@@ -6175,7 +6197,7 @@ namespace {
                     case AtomicOp::Or:  m_of << "atomic_fetch_or_explicit";    break;
                     case AtomicOp::Xor: m_of << "atomic_fetch_xor_explicit";   break;
                     }
-                    m_of << "("; emit_atomic_cast(); emit_param(e.args.at(0)); m_of << ", "; emit_param(e.args.at(1)); m_of << ", " << get_atomic_ty_gcc(ordering) << ")";
+                    m_of << "("; emit_atomic_arith_cast(); emit_param(e.args.at(0)); m_of << ", "; emit_atomic_arith_arg_cast(); emit_param(e.args.at(1)); m_of << ", " << get_atomic_ty_gcc(ordering) << ")";
                     break;
                 case Compiler::Msvc:
                     switch(op)
