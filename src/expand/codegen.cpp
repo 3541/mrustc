@@ -442,6 +442,7 @@ class CHandler_Link:
             std::string lib_name;
             bool emit = true;
             AST::ExternBlock::Link  link;
+            bool is_framework = false;
 
             while(lex.lookahead(0) != TOK_PAREN_CLOSE)
             {
@@ -458,7 +459,8 @@ class CHandler_Link:
                     auto v = lex.getTokenCheck(TOK_STRING).str();
                     if(v == "")
                         ERROR(sp, E0000, "Empty `kind` on extern block #[link]");
-                    // TODO: save and use the kind
+                    if(v == "framework")
+                        is_framework = true;
                 }
                 else if( key == "cfg" ) {
                     emit &= check_cfg_stream(lex);
@@ -478,6 +480,8 @@ class CHandler_Link:
             }
             if(link.lib_name == "")
                 ERROR(sp, E0000, "No name in `#[link]`");
+            if( is_framework )
+                link.lib_name = "framework=" + link.lib_name;
             if( emit )
             {
                 b->m_libraries.push_back(std::move(link));
